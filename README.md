@@ -1,6 +1,6 @@
 # PythonAppLauncher
 C++ code for a python application launcher on Windows in order to ease packaging
-proces
+process
 
 ## Summary
 
