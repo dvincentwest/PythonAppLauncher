@@ -49,8 +49,9 @@ wchar_t python_dll[] = L"\\python36.dll";
 // define the pythonXX.dll function call signature for the Py_Main function
 typedef int(__stdcall *py_main_function)(int, wchar_t**);
 
-int WinGUI = 1;
-#if WinGUI == 1
+using namespace std;
+
+#ifdef WINGUI
 int APIENTRY wWinMain(
 	_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -62,39 +63,37 @@ int APIENTRY wWinMain(
 #else
 int wmain(int argc, wchar_t **argv) {
 #endif
-
+    
 	// determine the path of the executable so we know the absolute path
 	// of the python runtime and application directories
 	wchar_t executable_dir[MAX_PATH];
 	if (GetModuleFileName(NULL, executable_dir, MAX_PATH) == 0)
-		return -1;
-	PathRemoveFileSpec(executable_dir);
-	std::wstring executable_dir_string(executable_dir);
-
+        return 1;
+    PathRemoveFileSpec(executable_dir);
+    wstring executable_dir_string(executable_dir);
 
 	// When the launcher is not run from within the same directory as the 
 	// pythonXX.dll, we have to set the PYTHONHOME environment variable in
 	// order to correctly use the right python environment
-	std::wstring python_home(L"PYTHONHOME=" + executable_dir_string + runtime_dir);
+	wstring python_home(L"PYTHONHOME=" + executable_dir_string + runtime_dir);
 	_wputenv(python_home.c_str());
 
 	// by setting PYTHONPATH we overwrite any system settings, and we can also 
 	// set a separate directory for our code that we want isolated from the runtime
-	std::wstring python_path(L"PYTHONPATH=" + executable_dir_string + applications_dir);
+	wstring python_path(L"PYTHONPATH=" + executable_dir_string + applications_dir);
 	_wputenv(python_path.c_str());
 
 	// put the python runtime at the front of the path
-	std::wstringstream ss;
+	wstringstream ss;
 	ss << "PATH=" << executable_dir << runtime_dir << ";" << getenv("PATH");
-	std::wstring path_string(ss.str());
+	wstring path_string(ss.str());
 	_wputenv(path_string.c_str());
 
-
 	// dynamically load the python dll
-	std::wstring python_dll_path(executable_dir_string + runtime_dir + python_dll);
+	wstring python_dll_path(executable_dir_string + runtime_dir + python_dll);
+    wcout << python_dll_path << endl;
 	HINSTANCE hGetProcIDDLL = LoadLibrary(python_dll_path.c_str());
 	py_main_function Py_Main = (py_main_function)GetProcAddress(hGetProcIDDLL, "Py_Main");
-
 
 	// here we inject the python application launching commands into the arguments array
 	int newargc;
@@ -108,6 +107,9 @@ int wmain(int argc, wchar_t **argv) {
 	for (int i = 1; i < argc; i++) {
 		newargv[i + 2] = argv[i];
 	}
+	
+	//just a little debug check
+	for (int i=0;i<newargc;i++) {wcout << newargv[i] << endl;}
 
 	//now call Py_Main with our arguments
 	return Py_Main(newargc, newargv);
