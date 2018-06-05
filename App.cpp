@@ -53,66 +53,66 @@ using namespace std;
 
 #ifdef WINGUI
 int APIENTRY wWinMain(
-	_In_ HINSTANCE hInstance,
-	_In_opt_ HINSTANCE hPrevInstance,
-	_In_ LPWSTR    lpCmdLine,
-	_In_ int       nCmdShow
+    _In_ HINSTANCE hInstance,
+    _In_opt_ HINSTANCE hPrevInstance,
+    _In_ LPWSTR    lpCmdLine,
+    _In_ int       nCmdShow
 ) {
-	int argc = __argc;
-	wchar_t **argv = __wargv;
+    int argc = __argc;
+    wchar_t **argv = __wargv;
 #else
 int wmain(int argc, wchar_t **argv) {
 #endif
     
-	// determine the path of the executable so we know the absolute path
-	// of the python runtime and application directories
-	wchar_t executable_dir[MAX_PATH];
-	if (GetModuleFileName(NULL, executable_dir, MAX_PATH) == 0)
+    // determine the path of the executable so we know the absolute path
+    // of the python runtime and application directories
+    wchar_t executable_dir[MAX_PATH];
+    if (GetModuleFileName(NULL, executable_dir, MAX_PATH) == 0)
         return 1;
     PathRemoveFileSpec(executable_dir);
     wstring executable_dir_string(executable_dir);
 
-	// When the launcher is not run from within the same directory as the 
-	// pythonXX.dll, we have to set the PYTHONHOME environment variable in
-	// order to correctly use the right python environment
-	wstring python_home(L"PYTHONHOME=" + executable_dir_string + runtime_dir);
-	_wputenv(python_home.c_str());
+    // When the launcher is not run from within the same directory as the 
+    // pythonXX.dll, we have to set the PYTHONHOME environment variable in
+    // order to correctly use the right python environment
+    wstring python_home(L"PYTHONHOME=" + executable_dir_string + runtime_dir);
+    _wputenv(python_home.c_str());
 
-	// by setting PYTHONPATH we overwrite any system settings, and we can also 
-	// set a separate directory for our code that we want isolated from the runtime
-	wstring python_path(L"PYTHONPATH=" + executable_dir_string + applications_dir);
-	_wputenv(python_path.c_str());
+    // by setting PYTHONPATH we overwrite any system settings, and we can also 
+    // set a separate directory for our code that we want isolated from the runtime
+    wstring python_path(L"PYTHONPATH=" + executable_dir_string + applications_dir);
+    _wputenv(python_path.c_str());
 
-	// put the python runtime at the front of the path
-	wstringstream ss;
-	ss << "PATH=" << executable_dir << runtime_dir << ";" << getenv("PATH");
-	wstring path_string(ss.str());
-	_wputenv(path_string.c_str());
+    // put the python runtime at the front of the path
+    wstringstream ss;
+    ss << "PATH=" << executable_dir << runtime_dir << ";" << getenv("PATH");
+    wstring path_string(ss.str());
+    _wputenv(path_string.c_str());
 
-	// dynamically load the python dll
-	wstring python_dll_path(executable_dir_string + runtime_dir + python_dll);
+    // dynamically load the python dll
+    wstring python_dll_path(executable_dir_string + runtime_dir + python_dll);
     wcout << python_dll_path << endl;
-	HINSTANCE hGetProcIDDLL = LoadLibrary(python_dll_path.c_str());
-	py_main_function Py_Main = (py_main_function)GetProcAddress(hGetProcIDDLL, "Py_Main");
+    HINSTANCE hGetProcIDDLL = LoadLibrary(python_dll_path.c_str());
+    py_main_function Py_Main = (py_main_function)GetProcAddress(hGetProcIDDLL, "Py_Main");
 
-	// here we inject the python application launching commands into the arguments array
-	int newargc;
-	newargc = argc + 2;
+    // here we inject the python application launching commands into the arguments array
+    int newargc;
+    newargc = argc + 2;
 
-	wchar_t **newargv = new wchar_t*[newargc];
-	newargv[0] = argv[0];
-	newargv[1] = SWITCH;
-	newargv[2] = APP;
+    wchar_t **newargv = new wchar_t*[newargc];
+    newargv[0] = argv[0];
+    newargv[1] = SWITCH;
+    newargv[2] = APP;
 
-	for (int i = 1; i < argc; i++) {
-		newargv[i + 2] = argv[i];
-	}
-	
-	//just a little debug check
-	for (int i=0;i<newargc;i++) {wcout << newargv[i] << endl;}
+    for (int i = 1; i < argc; i++) {
+        newargv[i + 2] = argv[i];
+    }
+    
+    //just a little debug check
+    for (int i=0;i<newargc;i++) {wcout << newargv[i] << endl;}
 
-	//now call Py_Main with our arguments
-	return Py_Main(newargc, newargv);
-	//return Py_Main(argc, argv);
+    //now call Py_Main with our arguments
+    return Py_Main(newargc, newargv);
+    //return Py_Main(argc, argv);
 
 }
