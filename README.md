@@ -23,3 +23,7 @@ command line
 
 Change 'App' to whatever your application name is, provide a .ico file or just
 disable the linking in the .bat file.
+
+## License
+
+MIT License
